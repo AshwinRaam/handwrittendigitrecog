@@ -3,27 +3,31 @@ from keras.models import load_model
 import numpy as np
 from collections import deque
 
+# Load pretrained model on MNIST dataset
 model = load_model('mnistdawk.h5')
 
 def main():
     cap = cv2.VideoCapture(0)
-    Lower_green = np.array([110, 50, 50])
-    Upper_green = np.array([130, 255, 255])
-    pts = deque(maxlen=512)
-    blackboard = np.zeros((480, 640, 3), dtype=np.uint8)
-    digit = np.zeros((200, 200, 3), dtype=np.uint8)
+    # Color range in HSV for color detection
+    lower_blue = np.array([110, 50, 50])
+    upper_blue = np.array([130, 255, 255])
+    points = deque(maxlen=512)
+    drawboard = np.zeros((480, 640, 3), dtype=np.uint8)
+    digit = np.zeros((224, 224, 3), dtype=np.uint8)
     pred_class = 0
     
     while (cap.isOpened()):
         ret, img = cap.read()
         img = cv2.flip(img, 1)
+        # Color detection function
         hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        # Noise redution process
         kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.inRange(hsv, Lower_green, Upper_green)
+        mask = cv2.inRange(hsv, lower_blue, upper_blue)
         mask = cv2.erode(mask, kernel, iterations=2)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
         mask = cv2.dilate(mask, kernel, iterations=1)
-        res = cv2.bitwise_and(img, img, mask=mask)
+        # Contor detection
         cnts, heir = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
         center = None
 
@@ -35,29 +39,29 @@ def main():
                 cv2.circle(img, center, 5, (0, 0, 255), -1)
                 M = cv2.moments(cnt)
                 center = (int(M['m10'] / M['m00']), int(M['m01'] / M['m00']))
-                pts.appendleft(center)
-                for i in range(1, len(pts)):
-                    if pts[i - 1] is None or pts[i] is None:
+                points.appendleft(center)
+                for i in range(1, len(points)):
+                    if points[i - 1] is None or points[i] is None:
                         continue
-                    cv2.line(blackboard, pts[i - 1], pts[i], (255, 255, 255), 20)
-                    cv2.line(img, pts[i - 1], pts[i], (0, 0, 255), 14)
+                    cv2.line(drawboard, points[i - 1], points[i], (255, 255, 255), 20)
+                    cv2.line(img, points[i - 1], points[i], (0, 0, 255), 14)
         elif len(cnts) == 0:
-            if len(pts) != []:
-                blackboard_gray = cv2.cvtColor(blackboard, cv2.COLOR_BGR2GRAY)
-                blur1 = cv2.medianBlur(blackboard_gray, 15)
+            if len(points) != []:
+                drawboard_gray = cv2.cvtColor(drawboard, cv2.COLOR_BGR2GRAY)
+                blur1 = cv2.medianBlur(drawboard_gray, 15)
                 blur1 = cv2.GaussianBlur(blur1, (5, 5), 0)
                 thresh1 = cv2.threshold(blur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-                blackboard_cnts,hh = cv2.findContours(thresh1.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
-                if len(blackboard_cnts) >= 1:
-                    cnt = max(blackboard_cnts, key=cv2.contourArea)
+                drawboard_cnts,hh = cv2.findContours(thresh1.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+                if len(drawboard_cnts) >= 1:
+                    cnt = max(drawboard_cnts, key=cv2.contourArea)
                     if cv2.contourArea(cnt) > 2000:
                         x, y, w, h = cv2.boundingRect(cnt)
-                        digit = blackboard_gray[y:y + h, x:x + w]
+                        digit = drawboard_gray[y:y + h, x:x + w]
                         pred_proba, pred_class = num_predict(model, digit)
                         print("The number you have drawn is ",pred_class,)
 
-            pts = deque(maxlen=512)
-            blackboard = np.zeros((480, 640, 3), dtype=np.uint8)
+            points = deque(maxlen=512)
+            drawboard = np.zeros((480, 640, 3), dtype=np.uint8)
         cv2.imshow("Frame", img)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
