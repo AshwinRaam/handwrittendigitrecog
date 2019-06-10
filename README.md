@@ -18,6 +18,9 @@ I have added a trained model that can be used or any own model can be used to fo
 ## Demo
 [Project Demo](https://github.com/AshwinRaam/handwrittendigitrecog/blob/master/demo/project-video.gif)
 
+
+<img src="https://github.com/AshwinRaam/handwrittendigitrecog/blob/master/demo/project-video.gif">
+
 ## Reading materials
 
  - https://www.learnopencv.com/color-spaces-in-opencv-cpp-python/
