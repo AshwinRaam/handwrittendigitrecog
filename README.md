@@ -1,4 +1,4 @@
-# Hand written Digit recognition
+# Hand written Digit over the air recognition
 
 This is a **deep learning + computer vision** project that uses old school color tracking and MNIST data set trained **CNN** to produce image and predict its class respectively . Planing to expand  this project into something more advance that uses object detection and tracking for more accurate results and to build my childhood desire of dream draw project that every child still does by sketching in air with imagination as tool. So **Dream draw**  will incorporate **GANS** and this project is a small step towards it.
 
